@@ -5,6 +5,7 @@ var Spotify = require(`node-spotify-api`);
 var omdbApi = require(`omdb-client`);
 var moment = require('moment');
 var fs = require(`fs`);
+var spotifyUri = require(`spotify-uri`);
 
 var spotify = new Spotify(keys.spotify);
 var omdbKey = keys.omdbKey;
@@ -15,9 +16,19 @@ var movieParams = {};
 
 switch(command){
     case `spotify-this-song`:
-    // spotify:track:2vAJzMPjMoTROtntmZoaIb I Saw The Sign
         if (!process.argv[3]){
-            searchSpotify(`The Sign`, 5);
+            let parsed = spotifyUri.parse('spotify:track:0hrBpAOgrt8RXigk83LLNE');
+            let uri = spotifyUri.formatOpenURL(parsed);
+            let theSign =
+`No song was selected.
+Enjoy some Ace of Base!
+${uri}
+----------------------\n`
+            console.log(theSign);
+            fs.appendFile('log.txt', theSign, error => {
+                if (error) throw error;
+            });
+
         }else{
             let song = process.argv[3];
             searchSpotify(song, 5);
@@ -70,16 +81,14 @@ function searchSpotify(song, totalResults){
             return console.log(`Spotify search error: ${error}`);
         }
         let responseList = data.tracks.items.splice(0, totalResults);
-        // let artists = responseList[0].artists[0].name;
-        // console.log('artists:', artists)
-        responseList.forEach(songDetail => { ////${songDetail.artists[0].name}
+        //console.log('responseList:', responseList)
+        responseList.forEach(songDetail => {
             let songData = 
 `Artist(s): ${songDetail.artists[0].name}
 Song Name: ${songDetail.name}
 Preview Link: ${songDetail.preview_url}
 Album: ${songDetail.album.name}
-----------------------
-`;
+----------------------\n`;
             console.log(songData);
             fs.appendFile('log.txt', songData, error => {
                 if (error) throw error;
@@ -97,8 +106,7 @@ function searchBandsInTown(band){
 Location: ${venue.venue.city}, ${venue.venue.region} ${venue.venue.country} 
 Date: ${moment(venue.datetime).format(`MM-DD-YYYY`)}
 See venue location on Google Maps: https://maps.google.com/?q=${venue.venue.latitude},${venue.venue.longitude}
-----------------------
-`;
+----------------------\n`;
             console.log(concertData);
             fs.appendFile('log.txt', concertData, error => {
                 if (error) throw error;
@@ -125,6 +133,8 @@ Actors: ${response.Actors}
         fs.appendFile('log.txt', movieData, error => {
             if (error) throw error;
         });
+    }).catch(error => {
+        console.log(`Movie Search Error: ${error}`);
     });
     
 }
